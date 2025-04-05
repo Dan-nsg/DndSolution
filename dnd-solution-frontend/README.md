@@ -13,13 +13,16 @@ This project is a Vue 3 frontend application built with Vite, designed to provid
 ## Screenshots
 
 ### Home Page
-![Home Page](/screenshots/home.png)
+![image](https://github.com/user-attachments/assets/32b5ad2b-3184-4983-9ec9-0034ee8c5caa)
+
 
 ### Spell List
-![Spell List](/screenshots/spellList.png)
+![image](https://github.com/user-attachments/assets/2f2965c9-f8d6-4cd6-b9ec-eea9f46fcfb0)
+
 
 ### Spell Details
-![Spell Details](/screenshots/spellDetails.png)
+![image](https://github.com/user-attachments/assets/73773f35-50e9-4f9e-806d-b244392acd47)
+
 
 > **Note**: Make sure to create a `screenshots` folder in the root directory and add the corresponding images.
 
@@ -59,7 +62,8 @@ npm run preview: Previews the production build.
 npm run type-check: Runs TypeScript type checks.
 
 ## Project Structure
-![Structure](/screenshots/projectStructure.png)
+![image](https://github.com/user-attachments/assets/5bb94645-574f-4c11-bfec-84c1097b5e63)
+
 
 ## Contribution
 Contributions are welcome! Follow these steps to contribute:
