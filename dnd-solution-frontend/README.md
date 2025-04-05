@@ -13,13 +13,13 @@ This project is a Vue 3 frontend application built with Vite, designed to provid
 ## Screenshots
 
 ### Home Page
-![Home Page](./screenshots/home.png)
+![Home Page](/screenshots/home.png)
 
 ### Spell List
-![Spell List](./screenshots/spells-list.png)
+![Spell List](/screenshots/spellList.png)
 
 ### Spell Details
-![Spell Details](./screenshots/spell-details.png)
+![Spell Details](/screenshots/spellDetails.png)
 
 > **Note**: Make sure to create a `screenshots` folder in the root directory and add the corresponding images.
 
@@ -41,11 +41,13 @@ This project is a Vue 3 frontend application built with Vite, designed to provid
    cd dnd-solution-frontend
 
 2. Install dependencies:
+   ```sh
    npm install
 
 3. Configure the .env file (if needed) to point to the backend API.
 
 4. Start the development server:
+   ```sh
    npm run dev
 
 5. Access the application at http://localhost:5173.
@@ -57,14 +59,7 @@ npm run preview: Previews the production build.
 npm run type-check: Runs TypeScript type checks.
 
 ## Project Structure
- src/
-├── api/               # HTTP client configuration
-├── assets/            # Static assets (CSS, images)
-├── components/        # Reusable components
-├── router/            # Route configuration
-├── stores/            # State management with Pinia
-├── views/             # Main pages
-└── main.ts            # Application entry point
+![Structure](/screenshots/projectStructure.png)
 
 ## Contribution
 Contributions are welcome! Follow these steps to contribute:
@@ -72,12 +67,15 @@ Contributions are welcome! Follow these steps to contribute:
 1. Fork the repository.
 
 2. Create a branch for your feature or fix:
+   ```sh
     git checkout -b my-feature
 
 3. Commit your changes:
+   ```sh
     git commit -m "feat: add my new feature"
 
 4. Push to the remote branch:
+   ```sh
     git push origin my-feature
 
 ## License
