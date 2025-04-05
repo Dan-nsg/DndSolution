@@ -38,12 +38,24 @@ export const useSpellStore = defineStore("spells", {
     totalSpells: null,
   }),
   actions: {
-    async fetchSpells(page = 1, pageSize = 20) {
+    async fetchSpells(
+      page = 1,
+      pageSize = 20,
+      filters: { search?: string; level?: number; school?: string } = {}
+    ) {
       this.loading = true;
       this.error = null;
       try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          pageSize: pageSize.toString(),
+          ...(filters.search ? { search: filters.search } : {}),
+          ...(filters.level ? { level: filters.level.toString() } : {}),
+          ...(filters.school ? { school: filters.school } : {}),
+        });
+
         const response = await axios.get<{ data: Spell[]; total: number }>(
-          `https://localhost:7051/api/spells?page=${page}&pageSize=${pageSize}`
+          `https://localhost:7051/api/spells?${params.toString()}`
         );
         this.spells = response.data.data;
         this.totalSpells = response.data.total;
