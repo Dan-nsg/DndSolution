@@ -16,6 +16,5 @@ public class DndApiSyncJob
     public async Task SyncData()
     {
         await _dndApiService.SyncSpells();
-        //adicione outros métodos de sincronização aqui
     }
 }

@@ -1,3 +1,154 @@
+<template>
+  <div class="spells-container">
+    <div class="spells-header">
+      <h1 class="spells-title">Collection of Arcane Knowledge</h1>
+      <p class="spells-subtitle">Ancient incantations from the forgotten realms</p>
+    </div>
+
+    <div class="grimoire-wrapper">
+      <div class="grimoire-decoration left"></div>
+
+      <div class="grimoire-pages">
+        <div class="controls-container">
+          <div class="search-and-filters">
+            <button @click="clearAllFilters" class="clear-filters-btn">
+              <span class="filter-icon">🧹</span> Clear Filters
+            </button>
+          </div>
+
+          <div class="spell-count" v-if="totalSpells">
+            <span class="spell-count-icon">📜</span>
+            <span>Showing {{ showingStart }}-{{ showingEnd }} of {{ totalSpells }} spells</span>
+          </div>
+        </div>
+
+        <div v-if="loading" class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Consulting the ancient tomes...</p>
+        </div>
+
+        <div v-else-if="error" class="error-message">
+          <p>It seems that the spells are not within your reach, the grimoire needs a new chance.</p>
+          <button @click="fetchPageData()" class="retry-button">Try Again</button>
+        </div>
+
+        <div v-else class="grid-container">
+          <AgGridVue class="ag-theme-alpine dnd-theme" :columnDefs="columnDefs" :rowData="spells" :pagination="false"
+            :domLayout="'normal'" :defaultColDef="defaultColDef" :getRowId="getRowId" @grid-ready="onGridReady"
+            @filter-changed="onFilterChanged" @sort-changed="onSortChanged" :components="components" />
+        </div>
+
+        <div class="pagination-wrapper" v-if="totalSpells && totalPages > 1">
+          <div class="pagination-controls">
+            <button @click="goToPreviousPage" :disabled="currentPage === 1" class="page-button prev-button">
+              <span class="page-arrow">◀</span> Previous
+            </button>
+
+            <div class="page-numbers">
+              <button v-if="visiblePages[0] > 1" @click="goToPage(1)" class="page-number">1</button>
+              <span v-if="visiblePages[0] > 2" class="page-ellipsis">...</span>
+
+              <button v-for="page in visiblePages" :key="page"
+                :class="['page-number', { active: page === currentPage }]" @click="goToPage(page)">
+                {{ page }}
+              </button>
+
+              <span v-if="visiblePages[visiblePages.length - 1] < totalPages - 1" class="page-ellipsis">...</span>
+              <button v-if="visiblePages[visiblePages.length - 1] < totalPages" @click="goToPage(totalPages)"
+                class="page-number">
+                {{ totalPages }}
+              </button>
+            </div>
+
+            <button @click="goToNextPage" :disabled="currentPage === totalPages" class="page-button next-button">
+              Next <span class="page-arrow">▶</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grimoire-decoration right"></div>
+    </div>
+
+    <transition name="modal-fade">
+      <div v-if="showModal && selectedSpell" class="modal-overlay" @click.self="closeModal">
+        <div class="spell-scroll" :class="{ 'modal-entering': modalTransition }">
+          <button @click="closeModal" class="modal-close-button">&times;</button>
+
+          <div class="spell-seal"></div>
+          <div class="spell-seal bottom"></div>
+
+          <div class="spell-scroll-inner">
+            <div class="spell-header">
+              <h2 class="spell-title">{{ selectedSpell.name }}</h2>
+              <div class="spell-subtitle">
+                <span>{{ selectedSpell.level === 0 ? 'Cantrip' : `Level ${selectedSpell.level}` }}</span>
+                <span>{{ selectedSpell.school }}</span>
+              </div>
+            </div>
+
+            <div class="spell-details">
+              <div class="detail-row">
+                <div class="detail-column">
+                  <div class="detail-group">
+                    <h3>Casting Time</h3>
+                    <p>{{ selectedSpell.casting_time }}</p>
+                  </div>
+
+                  <div class="detail-group">
+                    <h3>Range</h3>
+                    <p>{{ selectedSpell.range }}</p>
+                  </div>
+                </div>
+
+                <div class="detail-column">
+                  <div class="detail-group">
+                    <h3>Components</h3>
+                    <p>{{ selectedSpell.components }}</p>
+                    <p v-if="selectedSpell.material" class="material-components">
+                      ({{ selectedSpell.material }})
+                    </p>
+                  </div>
+
+                  <div class="detail-group">
+                    <h3>Duration</h3>
+                    <p>{{ selectedSpell.duration }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tag-container">
+                <span v-if="selectedSpell.ritual" class="tag ritual">Ritual</span>
+                <span v-if="selectedSpell.concentration" class="tag concentration">Concentration</span>
+              </div>
+
+              <div class="description-container">
+                <h3>Description</h3>
+                <div class="spell-description" v-html="selectedSpell.description"></div>
+
+                <div v-if="selectedSpell.higher_level" class="higher-level">
+                  <h3>At Higher Levels</h3>
+                  <p>{{ selectedSpell.higher_level }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-navigation">
+              <button @click="goToPreviousSpell" class="nav-button" :disabled="!hasPreviousSpell">
+                <span>◀</span> Previous Spell
+              </button>
+
+              <button @click="goToNextSpell" class="nav-button" :disabled="!hasNextSpell">
+                Next Spell <span>▶</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </div>
+</template>
+
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { AgGridVue } from 'ag-grid-vue3';
@@ -34,10 +185,6 @@ const columnDefs = ref([
     filter: true,
     sortable: true,
     width: 100,
-    cellRenderer: params => {
-      if (params.value === 0) return '<div class="cantrip-badge">Cantrip</div>';
-      return params.value;
-    }
   },
   {
     field: 'school',
@@ -49,47 +196,6 @@ const columnDefs = ref([
       const schoolClass = params.value?.toLowerCase().replace(/\s/g, '-') || '';
       return `<div class="school-badge ${schoolClass}">${params.value}</div>`;
     }
-  },
-  {
-    field: 'casting_time',
-    headerName: 'Casting Time',
-    filter: true,
-    sortable: true,
-    width: 150
-  },
-  {
-    field: 'range',
-    headerName: 'Range',
-    filter: true,
-    sortable: true,
-    width: 130
-  },
-  {
-    field: 'duration',
-    headerName: 'Duration',
-    filter: true,
-    sortable: true,
-    width: 150
-  },
-  {
-    field: 'concentration',
-    headerName: 'Conc.',
-    filter: true,
-    sortable: true,
-    width: 100,
-    cellRenderer: params => {
-      if (params.value === 'yes') {
-        return '<div class="concentration-badge">Yes</div>';
-      }
-      return 'No';
-    }
-  },
-  {
-    field: 'classes',
-    headerName: 'Classes',
-    filter: true,
-    sortable: true,
-    width: 220
   },
   {
     headerName: '',
@@ -200,6 +306,10 @@ const onGridReady = async (params) => {
   }
 
   params.api.sizeColumnsToFit();
+
+  window.addEventListener('resize', () => {
+    params.api.sizeColumnsToFit();
+  });
 };
 
 const goToPreviousPage = async () => {
@@ -302,177 +412,6 @@ watch(() => selectedSpell.value, () => {
   }
 });
 </script>
-
-
-<template>
-  <div class="spells-container">
-    <div class="spells-header">
-      <h1 class="spells-title">Book of Arcane Knowledge</h1>
-      <p class="spells-subtitle">Ancient incantations from the forgotten realms</p>
-    </div>
-
-    <!-- Grimoire container with decorative elements -->
-    <div class="grimoire-wrapper">
-      <div class="grimoire-decoration left"></div>
-
-      <div class="grimoire-pages">
-        <!-- Controls -->
-        <div class="controls-container">
-          <div class="search-and-filters">
-            <button @click="clearAllFilters" class="clear-filters-btn">
-              <span class="filter-icon">🧹</span> Clear Filters
-            </button>
-          </div>
-
-          <div class="spell-count" v-if="totalSpells">
-            <span class="spell-count-icon">📜</span>
-            <span>Showing {{ showingStart }}-{{ showingEnd }} of {{ totalSpells }} spells</span>
-          </div>
-        </div>
-
-        <!-- Loading indicator -->
-        <div v-if="loading" class="loading-container">
-          <div class="loading-spinner"></div>
-          <p>Consulting the ancient tomes...</p>
-        </div>
-
-        <!-- Error message -->
-        <div v-else-if="error" class="error-message">
-          <p>{{ error }}</p>
-          <button @click="fetchPageData()" class="retry-button">Try Again</button>
-        </div>
-
-        <!-- Grid -->
-        <div v-else class="grid-container">
-          <AgGridVue class="ag-theme-alpine dnd-theme" :columnDefs="columnDefs" :rowData="spells" :pagination="false"
-            :domLayout="'normal'" :defaultColDef="defaultColDef" :getRowId="getRowId" @grid-ready="onGridReady"
-            @filter-changed="onFilterChanged" @sort-changed="onSortChanged" :components="components" />
-
-          <!-- Pagination -->
-          <div class="pagination-wrapper">
-            <div class="pagination-controls">
-              <button @click="goToPreviousPage" :disabled="currentPage === 1" class="page-button prev-button">
-                <span class="page-arrow">◀</span> Previous
-              </button>
-
-              <div class="page-numbers">
-                <button v-if="visiblePages[0] > 1" @click="goToPage(1)" class="page-number">1</button>
-                <span v-if="visiblePages[0] > 2" class="page-ellipsis">...</span>
-
-                <button v-for="page in visiblePages" :key="page"
-                  :class="['page-number', { active: page === currentPage }]" @click="goToPage(page)">
-                  {{ page }}
-                </button>
-
-                <span v-if="visiblePages[visiblePages.length - 1] < totalPages - 1" class="page-ellipsis">...</span>
-                <button v-if="visiblePages[visiblePages.length - 1] < totalPages" @click="goToPage(totalPages)"
-                  class="page-number">
-                  {{ totalPages }}
-                </button>
-              </div>
-
-              <button @click="goToNextPage" :disabled="currentPage === totalPages" class="page-button next-button">
-                Next <span class="page-arrow">▶</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grimoire-decoration right"></div>
-    </div>
-
-    <!-- Spell Detail Modal -->
-    <!-- Spell Detail Modal -->
-    <transition name="modal-fade">
-      <div v-if="showModal && selectedSpell" class="modal-overlay" @click.self="closeModal">
-        <div class="modal-content spell-scroll" :class="{ 'modal-entering': modalTransition }">
-          <button class="modal-close-button" @click="closeModal">×</button>
-
-          <div class="spell-scroll-inner">
-            <div class="spell-seal"></div>
-
-            <div class="spell-header">
-              <h2 class="spell-title">{{ selectedSpell.name }}</h2>
-              <div class="spell-subtitle">
-                <span>{{ selectedSpell.level === 0 ? 'Cantrip' : `Level ${selectedSpell.level}` }}</span>
-                <span class="school-badge" :class="selectedSpell.school?.toLowerCase().replace(/\s/g, '-')">
-                  {{ selectedSpell.school }}
-                </span>
-              </div>
-            </div>
-
-            <div class="spell-details">
-              <div class="detail-row">
-                <div class="detail-column">
-                  <div class="detail-group">
-                    <h3>Casting Time</h3>
-                    <p>{{ selectedSpell.casting_time }}</p>
-                  </div>
-
-                  <div class="detail-group">
-                    <h3>Range</h3>
-                    <p>{{ selectedSpell.range }}</p>
-                  </div>
-
-                  <div class="detail-group">
-                    <h3>Components</h3>
-                    <p>{{ selectedSpell.components }}</p>
-                    <p v-if="selectedSpell.material" class="material-components">
-                      <i>{{ selectedSpell.material }}</i>
-                    </p>
-                  </div>
-                </div>
-
-                <div class="detail-column">
-                  <div class="detail-group">
-                    <h3>Duration</h3>
-                    <p>{{ selectedSpell.duration }}</p>
-                  </div>
-
-                  <div class="detail-group tags">
-                    <h3>Tags</h3>
-                    <div class="tag-container">
-                      <span v-if="selectedSpell.ritual === 'yes'" class="tag ritual">Ritual</span>
-                      <span v-if="selectedSpell.concentration === 'yes'" class="tag concentration">Concentration</span>
-                    </div>
-                  </div>
-
-                  <div class="detail-group">
-                    <h3>Classes</h3>
-                    <p>{{ selectedSpell.classes }}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="description-container">
-                <h3>Description</h3>
-                <div class="spell-description">{{ selectedSpell.description }}</div>
-
-                <div v-if="selectedSpell.higher_level" class="higher-level">
-                  <h3>At Higher Levels</h3>
-                  <p>{{ selectedSpell.higher_level }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Modal Navigation -->
-            <div class="modal-navigation">
-              <button @click="goToPreviousSpell" :disabled="!hasPreviousSpell" class="nav-button prev-spell">
-                <span class="nav-icon">◀</span> Previous Spell
-              </button>
-              <button @click="goToNextSpell" :disabled="!hasNextSpell" class="nav-button next-spell">
-                Next Spell <span class="nav-icon">▶</span>
-              </button>
-            </div>
-
-            <div class="spell-seal bottom"></div>
-          </div>
-        </div>
-      </div>
-    </transition>
-  </div>
-</template>
 
 <style scoped>
 .spells-container {
@@ -598,6 +537,8 @@ watch(() => selectedSpell.value, () => {
     linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 20px 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 .grimoire-pages::before {
@@ -723,16 +664,25 @@ watch(() => selectedSpell.value, () => {
 }
 
 .grid-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
   height: 60vh;
-  min-height: 500px;
-  position: relative;
+  /* Reduced height to make room for pagination */
   border: 3px solid var(--color-accent);
   border-radius: 5px;
   overflow: hidden;
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
+:deep(.ag-theme-alpine) {
+  height: 100%;
+  width: 100%;
 }
 
 :deep(.dnd-theme) {
-  --ag-background-color: transparent;
+  --ag-background-color: var(--color-background);
   --ag-odd-row-background-color: rgba(0, 0, 0, 0.05);
   --ag-header-background-color: var(--color-accent);
   --ag-header-foreground-color: var(--color-background);
@@ -753,10 +703,6 @@ watch(() => selectedSpell.value, () => {
   letter-spacing: 1px;
 }
 
-:deep(.ag-header-cell) {
-  padding: 10px 15px;
-}
-
 :deep(.ag-row) {
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   transition: background-color 0.2s ease;
@@ -770,6 +716,7 @@ watch(() => selectedSpell.value, () => {
   padding: 12px 15px;
   display: flex;
   align-items: center;
+  color: var(--color-text);
 }
 
 :deep(.spell-name) {
@@ -831,6 +778,8 @@ watch(() => selectedSpell.value, () => {
   margin-top: 20px;
   padding-top: 15px;
   border-top: 2px solid var(--color-secondary);
+  display: block;
+  /* Ensure it's visible */
 }
 
 .pagination-controls {

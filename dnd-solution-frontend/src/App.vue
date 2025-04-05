@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 import { ref, watch, onMounted } from 'vue';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faHome, faMagic, faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
+
+library.add(faHome, faMagic, faMoon, faSun);
 
 const route = useRoute();
 
@@ -56,11 +61,15 @@ watch(isDarkMode, (newValue) => {
 
         <div class="navigation-tabs">
           <RouterLink to="/" :class="{ active: route.path === '/' }">
-            <span class="tab-icon"><i class="fas fa-home"></i></span>
+            <span class="tab-icon">
+              <FontAwesomeIcon :icon="['fas', 'home']" />
+            </span>
             <span class="tab-text">Home</span>
           </RouterLink>
           <RouterLink to="/spells" :class="{ active: route.path === '/spells' }">
-            <span class="tab-icon"><i class="fas fa-magic"></i></span>
+            <span class="tab-icon">
+              <FontAwesomeIcon :icon="['fas', 'magic']" />
+            </span>
             <span class="tab-text">Spells</span>
           </RouterLink>
         </div>
@@ -69,7 +78,7 @@ watch(isDarkMode, (newValue) => {
           <label class="theme-switch" :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
             <input type="checkbox" v-model="isDarkMode" />
             <span class="slider">
-              <i class="toggle-icon" :class="isDarkMode ? 'fas fa-moon' : 'fas fa-sun'"></i>
+              <FontAwesomeIcon :icon="isDarkMode ? ['fas', 'moon'] : ['fas', 'sun']" />
             </span>
           </label>
         </div>
