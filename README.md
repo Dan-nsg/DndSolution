@@ -1,2 +1,2 @@
 # DndSolution
- A Dnd API Grimoire Codex
+ A Dnd Grimoire Codex
