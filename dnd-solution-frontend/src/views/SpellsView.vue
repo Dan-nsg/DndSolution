@@ -11,15 +11,26 @@
       <div class="grimoire-pages">
         <div class="controls-container">
           <div class="search-and-filters">
-            <button @click="clearAllFilters" class="clear-filters-btn">
-              <span class="filter-icon">🧹</span> Clear Filters
-            </button>
+            <input v-model="filters.search" type="text" placeholder="Search spells..." class="filter-input" />
+            <select v-model="filters.level" class="filter-select">
+              <option value="">All Levels</option>
+              <option v-for="lvl in 9" :key="lvl" :value="lvl">Level {{ lvl }}</option>
+            </select>
+            <select v-model="filters.school" class="filter-select">
+              <option value="">All Schools</option>
+              <option v-for="school in schools" :key="school" :value="school">{{ school }}</option>
+            </select>
+            <button @click="applyFilters" class="apply-filters-btn">Apply Filters</button>
           </div>
 
-          <div class="spell-count" v-if="totalSpells">
-            <span class="spell-count-icon">📜</span>
-            <span>Showing {{ showingStart }}-{{ showingEnd }} of {{ totalSpells }} spells</span>
-          </div>
+          <button @click="clearAllFilters" class="clear-filters-btn">
+            <span class="filter-icon">🧹</span> Clear Filters
+          </button>
+        </div>
+
+        <div class="spell-count" v-if="totalSpells">
+          <span class="spell-count-icon">📜</span>
+          <span>Showing {{ showingStart }}-{{ showingEnd }} of {{ totalSpells }} spells</span>
         </div>
 
         <div v-if="loading" class="loading-container">
@@ -82,8 +93,9 @@
             <div class="spell-header">
               <h2 class="spell-title">{{ selectedSpell.name }}</h2>
               <div class="spell-subtitle">
-                <span>{{ selectedSpell.level === 0 ? 'Cantrip' : `Level ${selectedSpell.level}` }}</span>
-                <span>{{ selectedSpell.school }}</span>
+                <span style="color: black;">{{ selectedSpell.level === 0 ? 'Cantrip' : `Level ${selectedSpell.level}`
+                  }}</span>
+                <span style="color: black;">{{ selectedSpell.school }}</span>
               </div>
             </div>
 
@@ -92,27 +104,27 @@
                 <div class="detail-column">
                   <div class="detail-group">
                     <h3>Casting Time</h3>
-                    <p>{{ selectedSpell.casting_time }}</p>
+                    <p style="color: black;">{{ selectedSpell.casting_time }}</p>
                   </div>
 
                   <div class="detail-group">
                     <h3>Range</h3>
-                    <p>{{ selectedSpell.range }}</p>
+                    <p style="color: black;">{{ selectedSpell.range }}</p>
                   </div>
                 </div>
 
                 <div class="detail-column">
                   <div class="detail-group">
                     <h3>Components</h3>
-                    <p>{{ selectedSpell.components }}</p>
-                    <p v-if="selectedSpell.material" class="material-components">
+                    <p style="color: black;">{{ selectedSpell.components }}</p>
+                    <p v-if="selectedSpell.material" class="material-components" style="color: black;">
                       ({{ selectedSpell.material }})
                     </p>
                   </div>
 
                   <div class="detail-group">
                     <h3>Duration</h3>
-                    <p>{{ selectedSpell.duration }}</p>
+                    <p style="color: black;">{{ selectedSpell.duration }}</p>
                   </div>
                 </div>
               </div>
@@ -170,7 +182,7 @@ const columnDefs = ref([
   {
     field: 'name',
     headerName: 'Spell Name',
-    filter: true,
+    filter: false, // Desativa o filtro padrão
     sortable: true,
     flex: 1,
     minWidth: 200,
@@ -182,14 +194,14 @@ const columnDefs = ref([
   {
     field: 'level',
     headerName: 'Level',
-    filter: true,
+    filter: false, // Desativa o filtro padrão
     sortable: true,
     width: 100,
   },
   {
     field: 'school',
     headerName: 'School',
-    filter: true,
+    filter: false, // Desativa o filtro padrão
     sortable: true,
     width: 150,
     cellRenderer: params => {
@@ -202,7 +214,7 @@ const columnDefs = ref([
     cellRenderer: 'buttonRenderer',
     width: 120,
     sortable: false,
-    filter: false,
+    filter: false, // Desativa o filtro padrão
     cellRendererParams: {
       onClick: (data) => openModal(data),
     },
@@ -340,6 +352,28 @@ const clearAllFilters = () => {
     gridApi.value.setFilterModel(null);
     onFilterChanged();
   }
+};
+
+const filters = ref({
+  search: '',
+  level: '',
+  school: ''
+});
+
+const schools = ref([
+  'Abjuration',
+  'Conjuration',
+  'Divination',
+  'Enchantment',
+  'Evocation',
+  'Illusion',
+  'Necromancy',
+  'Transmutation'
+]);
+
+const applyFilters = async () => {
+  currentPage.value = 1; // Reinicia para a primeira página
+  await fetchPageData(filters.value);
 };
 
 const showModal = ref(false);
@@ -574,6 +608,47 @@ watch(() => selectedSpell.value, () => {
   display: flex;
   gap: 15px;
   align-items: center;
+}
+
+.filter-input {
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  width: 200px;
+}
+
+.filter-select {
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+}
+
+.apply-filters-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-secondary);
+  color: var(--color-background);
+  border: 1px solid var(--color-border);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px var(--shadow-color);
+  width: auto;
+}
+
+.apply-filters-btn:hover {
+  background-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--shadow-color);
 }
 
 .clear-filters-btn {
@@ -1107,6 +1182,7 @@ watch(() => selectedSpell.value, () => {
 }
 
 .spell-description {
+  color: #000000;
   background-color: rgba(255, 255, 255, 0.4);
   padding: 15px;
   border-left: 3px solid var(--color-secondary);
