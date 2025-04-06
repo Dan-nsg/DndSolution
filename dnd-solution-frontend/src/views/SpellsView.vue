@@ -94,7 +94,7 @@
               <h2 class="spell-title">{{ selectedSpell.name }}</h2>
               <div class="spell-subtitle">
                 <span style="color: black;">{{ selectedSpell.level === 0 ? 'Cantrip' : `Level ${selectedSpell.level}`
-                  }}</span>
+                }}</span>
                 <span style="color: black;">{{ selectedSpell.school }}</span>
               </div>
             </div>
@@ -182,7 +182,7 @@ const columnDefs = ref([
   {
     field: 'name',
     headerName: 'Spell Name',
-    filter: false, // Desativa o filtro padrão
+    filter: false,
     sortable: true,
     flex: 1,
     minWidth: 200,
@@ -194,14 +194,14 @@ const columnDefs = ref([
   {
     field: 'level',
     headerName: 'Level',
-    filter: false, // Desativa o filtro padrão
+    filter: false,
     sortable: true,
     width: 100,
   },
   {
     field: 'school',
     headerName: 'School',
-    filter: false, // Desativa o filtro padrão
+    filter: false,
     sortable: true,
     width: 150,
     cellRenderer: params => {
@@ -214,7 +214,7 @@ const columnDefs = ref([
     cellRenderer: 'buttonRenderer',
     width: 120,
     sortable: false,
-    filter: false, // Desativa o filtro padrão
+    filter: false,
     cellRendererParams: {
       onClick: (data) => openModal(data),
     },
@@ -348,10 +348,14 @@ const goToPage = async (page) => {
 const getRowId = (params) => params.data.id;
 
 const clearAllFilters = () => {
-  if (gridApi.value) {
-    gridApi.value.setFilterModel(null);
-    onFilterChanged();
-  }
+  filters.value = {
+    search: '',
+    level: '',
+    school: ''
+  };
+
+  currentPage.value = 1;
+  fetchPageData();
 };
 
 const filters = ref({
@@ -372,7 +376,7 @@ const schools = ref([
 ]);
 
 const applyFilters = async () => {
-  currentPage.value = 1; // Reinicia para a primeira página
+  currentPage.value = 1;
   await fetchPageData(filters.value);
 };
 
@@ -635,6 +639,7 @@ watch(() => selectedSpell.value, () => {
   color: var(--color-background);
   border: 1px solid var(--color-border);
   padding: 8px 16px;
+  margin-right: 4px;
   border-radius: 4px;
   cursor: pointer;
   font-family: 'Cinzel', serif;
@@ -658,7 +663,7 @@ watch(() => selectedSpell.value, () => {
   background-color: var(--color-secondary);
   color: var(--color-background);
   border: 1px solid var(--color-border);
-  padding: 8px 16px;
+  padding: 6px 16px;
   border-radius: 4px;
   cursor: pointer;
   font-family: 'Cinzel', serif;
